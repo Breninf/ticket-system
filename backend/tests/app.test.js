@@ -1,5 +1,5 @@
-const request = require('supertest');
-const app = require('../src/server');
+import request from 'supertest';
+import app from '../src/app.js'; 
 
 describe('API Tests', () => {
   it('should return 200 on /health', async () => {
