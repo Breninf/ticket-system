@@ -28,8 +28,6 @@ export function login(email, password) {
   }
 
   // gera JWT
-  console.log(process.env.JWT_SECRET);
-
   const token = jwt.sign(
 
     { email: user.email },
