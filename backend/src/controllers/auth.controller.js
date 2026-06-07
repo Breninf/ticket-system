@@ -2,17 +2,17 @@ import { register, login } from '../services/auth.service.js';
 
 // CONTROLLER DE CADASTRO 
 export async function registerController(req, res) {
-  const { email, password } = req.body;
+  const { name, email, password } = req.body;
 
-  if (!email || !password) {
+  if (!name || !email || !password) {
     return res.status(400).json({
       success: false,
-      message: 'Email and password are required'
+      message: 'Name, email and password are required'
     });
   }
 
   // Precisamos do await porque o service vai ao banco de dados
-  const result = await register(email, password);
+  const result = await register(name, email, password);
 
   if (!result.success) {
     return res.status(400).json(result); // 400 Bad Request se o usuário já existir

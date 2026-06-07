@@ -4,7 +4,7 @@ import prisma from "../../config/prisma.js";
 
 //Função de registro
 // 1. AVISO PRÉVIO: Avisou que a função é especial
-export async function register(email, password) {
+export async function register(name, email, password) {
   //2. prisma vai no pg e verifica se email já existe
   const userExists = await prisma.user.findUnique({
     where: {
@@ -23,6 +23,7 @@ export async function register(email, password) {
   //4. Cria usuário no banco
   const user = await prisma.user.create({
     data: {
+      name,
       email,
       password: hashedPassword
     }
@@ -33,6 +34,7 @@ export async function register(email, password) {
     message: 'User created successfully',
     user: {
       id: user.id,
+      name: user.name,
       email: user.email
     }
   };
