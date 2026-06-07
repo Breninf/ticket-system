@@ -21,7 +21,7 @@ services:
     depends_on:
       - postgres
 
-    command: npm start
+    command: sh -c "npx prisma generate && npm start"
 
   frontend:
     build: ./frontend

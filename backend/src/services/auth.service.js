@@ -1,50 +1,84 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import prisma from "../../config/prisma.js";
 
-const user = {
-  email: "admin@test.com",
-
-  passwordHash: bcrypt.hashSync("123456", 10), //cria haash
-};
-
-export function login(email, password) {
-  if (email !== user.email) {
-    //verifica email
+//Função de registro
+// 1. AVISO PRÉVIO: Avisou que a função é especial
+export async function register(email, password) {
+  //2. prisma vai no pg e verifica se email já existe
+  const userExists = await prisma.user.findUnique({
+    where: {
+      email
+    }
+  });
+  
+  if (userExists) {
     return {
       success: false,
-      message: "Invalid credentials",
+      message: 'User already exists'
     };
   }
-  // valida senha usando bcrypt. compara se bate com o hash
-  const passwordMatch = bcrypt.compareSync(password, user.passwordHash);
+  //3. faz criptografia na senha
+  const hashedPassword = await bcrypt.hash(password, 10);
+  //4. Cria usuário no banco
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashedPassword
+    }
+  });
+  //5. Retorno pro cliente
+  return {
+    success: true,
+    message: 'User created successfully',
+    user: {
+      id: user.id,
+      email: user.email
+    }
+  };
+}
 
-  if (!passwordMatch) { //se nao bateu va dar false
-
+//Função de login
+export async function login(email, password) {
+  //Verifica se email existe no banco
+  const user = await prisma.user.findUnique({
+    where: {
+      email
+    }
+  });
+ //retorno se não existir (caso retone vazio)
+  if (!user) {
     return {
       success: false,
       message: 'Invalid credentials'
     };
-
   }
-
-  // gera JWT
-  const token = jwt.sign(
-
-    { email: user.email },
-
-    process.env.JWT_SECRET, //chave 
-
-    { expiresIn: '1h' } //tempo de expiração do token
-
+  //verifica se a senha bate com o hash
+  const validPassword = await bcrypt.compare(
+    password,
+    user.password
   );
-
-   return {
-
+ //retorno se não bater
+  if (!validPassword) {
+    return {
+      success: false,
+      message: 'Invalid credentials'
+    };
+  }
+  //criação do token de acesso
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1d'
+    }
+  );
+  //retorno se tudo der certo
+  return {
     success: true,
-
-    message: 'Login successful',
-
     token
-
   };
 }
