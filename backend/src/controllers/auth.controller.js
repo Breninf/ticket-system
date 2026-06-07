@@ -42,3 +42,9 @@ export async function loginController(req, res) {
   return res.status(200).json(result);
 }
 
+export async function profileController(req, res) {
+  return res.json({
+    success: true,
+    user: req.user // Dados injetados pelo middleware
+  });
+}
