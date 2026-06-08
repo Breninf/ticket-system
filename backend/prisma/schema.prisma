@@ -17,11 +17,17 @@ model User {
   tickets   Ticket[]
 }
 
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
 model Ticket {
-  id          Int      @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   title       String
   description String
-  status      String   @default("OPEN")
+  status      TicketStatus @default(OPEN) 
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

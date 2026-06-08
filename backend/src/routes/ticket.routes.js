@@ -1,18 +1,13 @@
 import express from 'express';
-import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { create, findAll, findOne, update, remove } from '../controllers/ticket.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js'; // Reutilizando sua segurança!
 
 const router = express.Router();
 
-router.get(
-  '/' , 
-  authMiddleware,
-  (req,res) => {
-
-    return res.status(200).json({
-      message:'Protected route accessed'
-    });
-
-  }
-);
+router.post('/', authMiddleware, create); // Só logado cria chamado
+router.get('/', authMiddleware, findAll); // Só logado vê chamado
+router.get('/:id', authMiddleware, findOne);  // Ver detalhes de um chamado
+router.put('/:id', authMiddleware, update);   // Editar um chamado (mudar status/texto)
+router.delete('/:id', authMiddleware, remove); // Deletar um chamado
 
 export default router;
