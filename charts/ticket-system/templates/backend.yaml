@@ -29,6 +29,8 @@ spec:
               value: "{{ .Values.backend.jwtSecret }}"
             - name: PORT
               value: "{{ .Values.backend.port }}"
+            - name: SYSLOG_SERVER
+              value: "syslog-service"
 ---
 apiVersion: v1
 kind: Service
