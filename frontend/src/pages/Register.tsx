@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // ➡️ ADICIONADO: Estado do olhinho
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Valida os campos obrigatórios exigidos pelo seu back-end!
     if (!name || !email || !password) {
       setError('Por favor, preencha todos os campos.');
       return;
     }
 
     console.log('Dados enviados para cadastro:', { name, email, password });
-    alert('Tentativa de cadastro capturada! Quando o Breno testar no Kubernetes, o usuário será salvo no banco.');
+    alert('Conta criada com sucesso! Redirecionando para a tela de login...');
+    navigate('/login'); 
   };
 
   return (
@@ -71,14 +74,25 @@ export default function Register() {
 
         <div style={{ marginBottom: '24px' }}>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '8px', color: '#666', fontWeight: 'bold' }}>Senha</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Crie uma senha segura"
-            style={{ width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'} // ➡️ Alterna o tipo do input dinamicamente!
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Crie uma senha segura"
+              style={{ width: '100%', padding: '12px', paddingRight: '60px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+            />
+            {/* Botão de Mostrar/Esconder Senha */}
+            <button
+              type="button"
+              id="toggle-password-register"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#007bff', fontWeight: 'bold', fontSize: '12px' }}
+            >
+              {showPassword ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
         </div>
 
         <button type="submit" style={{
@@ -90,10 +104,18 @@ export default function Register() {
           borderRadius: '4px',
           fontWeight: 'bold',
           fontSize: '16px',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          marginBottom: '16px'
         }}>
           Cadastrar
         </button>
+
+        <div style={{ textAlign: 'center', fontSize: '14px' }}>
+          <span style={{ color: '#666' }}>Já tem uma conta? </span>
+          <Link to="/login" style={{ color: '#007bff', fontWeight: 'bold', textDecoration: 'none' }}>
+            Faça login aqui
+          </Link>
+        </div>
       </form>
     </div>
   );

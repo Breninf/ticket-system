@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // ADICIONADO: Importação do Link do roteador
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); //  ADICIONADO: Estado do olhinho
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,7 +18,11 @@ export default function Login() {
     }
 
     console.log('Dados enviados para validação:', { email, password });
-    alert('Tentativa de login capturada! Quando o Breno rodar no Kubernetes, a mágica vai acontecer.');
+    
+    //  SIMULAÇÃO: Salva o token e o nome que aparecerá no Olá da Dashboard!
+    localStorage.setItem('token', 'meu_token_jwt_ficticio_123');
+    localStorage.setItem('userName', 'Breno Silva'); // Guarda o nome do usuário logado
+    navigate('/dashboard'); 
   };
 
   return (
@@ -58,14 +64,25 @@ export default function Login() {
 
         <div style={{ marginBottom: '24px' }}>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '8px', color: '#666', fontWeight: 'bold' }}>Senha</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Sua senha secreta"
-            style={{ width: '100%', padding: '12px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'} //  Alterna o tipo do input dinamicamente!
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Sua senha secreta"
+              style={{ width: '100%', padding: '12px', paddingRight: '60px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+            />
+            {/* Botão de Mostrar/Esconder Senha */}
+            <button
+              type="button"
+              id="toggle-password-login"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#007bff', fontWeight: 'bold', fontSize: '12px' }}
+            >
+              {showPassword ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
         </div>
 
         <button type="submit" style={{
@@ -83,7 +100,6 @@ export default function Login() {
           Entrar
         </button>
 
-        {/* ADICIONADO: Link elegante para navegar até a página de Cadastro */}
         <div style={{ textAlign: 'center', fontSize: '14px' }}>
           <span style={{ color: '#666' }}>Não tem uma conta? </span>
           <Link to="/register" style={{ color: '#007bff', fontWeight: 'bold', textDecoration: 'none' }}>

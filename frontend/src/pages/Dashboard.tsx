@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Ticket {
   id: number;
@@ -8,6 +9,27 @@ interface Ticket {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
+  //  CORRIGIDO: Removido o 'setLoading' que não era usado para limpar o erro do ESLint!
+  const [userName] = useState(() => {
+    return localStorage.getItem('userName') || 'Usuário';
+  });
+
+  const [loading] = useState(() => {
+    const token = localStorage.getItem('token');
+    return !token; // Começa bloqueado (true) se o token não existir
+  });
+
+  //  TRAVA DE SEGURANÇA: Apenas expulsa o usuário se o token não existir
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Acesso negado! Por favor, faça login para acessar o painel.');
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
@@ -34,18 +56,33 @@ export default function Dashboard() {
     };
 
     setTickets([newTicket, ...tickets]);
-    setTitle('')
+    setTitle('');
     setDescription('');
-    alert('Ticket simulado com sucesso! Na quarta-feira ele será salvando direto no banco PostgreSQL via API.');
+    alert('Ticket simulado com sucesso! Na quarta-feira ele será salvo direto no banco PostgreSQL via API.');
   };
+
+  const handleLogout = () => {
+    localStorage.clear(); // Limpa as credenciais da sessão
+    alert('Efetuando logout do sistema...');
+    navigate('/login'); // Redireciona para o login
+  };
+
+  //  Bloqueio estrutural de tela enquanto valida o acesso
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', color: '#666' }}>
+        Verificando credenciais...
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '30px', fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h1 style={{ margin: 0, color: '#333' }}>Painel de Suporte - Chamados</h1>
-          <button onClick={() => { alert('Efetuando logout...'); }} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>Olá, <span style={{ color: '#007bff' }}>{userName}</span>! 👋</h1>
+          <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
             Sair
           </button>
         </div>
