@@ -12,7 +12,7 @@ database:
 backend:
   replicaCount: 1
   image: docker.io/library/ticket-system-backend # ➡️ Atualizado com o prefixo correto!
-  tag: dev
+  tag: v2
   port: 3000
   jwtSecret: minha_chave_secreta_do_kubernetes_mvp
 
@@ -20,5 +20,5 @@ backend:
 frontend:
   replicaCount: 1
   image: docker.io/library/ticket-system-frontend # ➡️ Atualizado com o prefixo correto!
-  tag: dev
+  tag: v7
   port: 5173

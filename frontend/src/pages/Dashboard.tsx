@@ -11,17 +11,21 @@ interface Ticket {
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  //  CORRIGIDO: Removido o 'setLoading' que não era usado para limpar o erro do ESLint!
   const [userName] = useState(() => {
     return localStorage.getItem('userName') || 'Usuário';
   });
 
   const [loading] = useState(() => {
     const token = localStorage.getItem('token');
-    return !token; // Começa bloqueado (true) se o token não existir
+    return !token;
   });
 
-  //  TRAVA DE SEGURANÇA: Apenas expulsa o usuário se o token não existir
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
+
+  // Expulsa usuário se não tiver token
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -30,16 +34,41 @@ export default function Dashboard() {
     }
   }, [navigate]);
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-  
-  const [tickets, setTickets] = useState<Ticket[]>([
-    { id: 1, title: 'Falha na conexão com o banco', description: 'O container Postgres caiu inesperadamente.', status: 'OPEN' },
-    { id: 2, title: 'Erro de CORS no login', description: 'A rota de autenticação está bloqueando a API local.', status: 'CLOSED' }
-  ]);
+  // Buscar tickets
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-  const handleCreateTicket = (e: React.FormEvent) => {
+    fetch('http://localhost:3000/tickets', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        console.log("RESPOSTA BACKEND:", data);
+
+        // ✅ CORREÇÃO PRINCIPAL: Blindagem universal contra objetos ou arrays puros
+        if (Array.isArray(data)) {
+          setTickets(data);
+        } else if (data && Array.isArray(data.tickets)) {
+          setTickets(data.tickets);
+        } else {
+          setTickets([]);
+        }
+      })
+      .catch(() => {
+        console.log('Erro ao carregar tickets reais. Usando lista vazia.');
+        setTickets([]);
+      });
+  }, []);
+
+  // Criar ticket
+  const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -48,29 +77,60 @@ export default function Dashboard() {
       return;
     }
 
-    const newTicket: Ticket = {
-      id: Date.now(),
-      title,
-      description,
-      status: 'OPEN'
-    };
+    try {
+      const token = localStorage.getItem('token');
 
-    setTickets([newTicket, ...tickets]);
-    setTitle('');
-    setDescription('');
-    alert('Ticket simulado com sucesso! Na quarta-feira ele será salvo direto no banco PostgreSQL via API.');
+      const response = await fetch('http://localhost:3000/tickets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ title, description })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Erro ao salvar o chamado.');
+        return;
+      }
+
+      const newTicket: Ticket = {
+        id: data.id || Date.now(),
+        title: data.title || title,
+        description: data.description || description,
+        status: data.status || 'OPEN'
+      };
+
+      // ✅ MELHORIA: Atualização segura usando o estado anterior (prev)
+      setTickets(prev => [newTicket, ...prev]);
+
+      setTitle('');
+      setDescription('');
+      alert('Ticket aberto com sucesso e gravado no banco PostgreSQL do Kubernetes!');
+    } catch (err) {
+      setError('Erro ao conectar com o servidor para salvar ticket.');
+    }
   };
 
   const handleLogout = () => {
-    localStorage.clear(); // Limpa as credenciais da sessão
+    localStorage.clear();
     alert('Efetuando logout do sistema...');
-    navigate('/login'); // Redireciona para o login
+    navigate('/login');
   };
 
-  //  Bloqueio estrutural de tela enquanto valida o acesso
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', color: '#666' }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontFamily: 'sans-serif',
+        backgroundColor: '#f4f6f9',
+        color: '#666'
+      }}>
         Verificando credenciais...
       </div>
     );
@@ -79,79 +139,148 @@ export default function Dashboard() {
   return (
     <div style={{ padding: '30px', fontFamily: 'sans-serif', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>Olá, <span style={{ color: '#007bff' }}>{userName}</span>! 👋</h1>
-          <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px',
+          backgroundColor: '#ffffff',
+          padding: '20px',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        }}>
+          <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>
+            Olá, <span style={{ color: '#007bff' }}>{userName}</span>! 👋
+          </h1>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
             Sair
           </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }}>
-          
-          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', height: 'fit-content' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#007bff' }}>Abrir Novo Ticket</h3>
-            
+
+          {/* FORM */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '24px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            height: 'fit-content'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#007bff' }}>
+              Abrir Novo Ticket
+            </h3>
+
             {error && (
-              <div style={{ color: '#721c24', backgroundColor: '#f8d7da', padding: '10px', borderRadius: '4px', marginBottom: '16px', fontSize: '13px' }}>
+              <div style={{
+                color: '#721c24',
+                backgroundColor: '#f8d7da',
+                padding: '10px',
+                borderRadius: '4px',
+                marginBottom: '16px',
+                fontSize: '13px'
+              }}>
                 {error}
               </div>
             )}
 
             <form onSubmit={handleCreateTicket}>
               <div style={{ marginBottom: '16px' }}>
-                <label htmlFor="ticket-title" style={{ display: 'block', marginBottom: '6px', color: '#555', fontWeight: 'bold', fontSize: '14px' }}>Título do Problema</label>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                  Título
+                </label>
                 <input
-                  id="ticket-title"
-                  type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Queda do servidor de banco"
-                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px', border: '1px solid #ccc', boxSizing: 'border-box' }}
                 />
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <label htmlFor="ticket-desc" style={{ display: 'block', marginBottom: '6px', color: '#555', fontWeight: 'bold', fontSize: '14px' }}>Descrição do Chamado</label>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                  Descrição
+                </label>
                 <textarea
-                  id="ticket-desc"
                   value={description}
-                  rows={4}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detalhe o erro ocorrido..."
-                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box', resize: 'none' }}
+                  rows={4}
+                  style={{ width: '100%', padding: '10px', border: '1px solid #ccc', boxSizing: 'border-box', resize: 'none' }}
                 />
               </div>
 
-              <button type="submit" style={{ width: '100%', padding: '12px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>
+              <button
+                type="submit"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  backgroundColor: '#007bff',
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
                 Enviar Chamado
               </button>
             </form>
           </div>
 
-          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#333' }}>Seus Chamados Cadastrados</h3>
-            
+          {/* LISTA */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '24px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '20px' }}>
+              Seus Chamados
+            </h3>
+
             {tickets.length === 0 ? (
-              <p style={{ color: '#999', textAlign: 'center', padding: '40px 0' }}>Nenhum ticket encontrado.</p>
+              <p style={{ color: '#999', textAlign: 'center', padding: '40px 0' }}>
+                Nenhum ticket encontrado.
+              </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {tickets.map(ticket => (
-                  <div key={ticket.id} style={{ padding: '16px', border: '1px solid #e3e6f0', borderRadius: '6px', backgroundColor: '#f8f9fc' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <strong style={{ fontSize: '16px', color: '#4e73df' }}>{ticket.title}</strong>
+                  <div key={ticket.id} style={{
+                    padding: '16px',
+                    border: '1px solid #e3e6f0',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8f9fc'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ color: '#4e73df' }}>
+                        {ticket.title}
+                      </strong>
                       <span style={{
+                        fontSize: '12px',
                         padding: '4px 8px',
                         borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
                         color: '#fff',
+                        fontWeight: 'bold',
                         backgroundColor: ticket.status === 'OPEN' ? '#f6c23e' : '#1cc88a'
                       }}>
                         {ticket.status}
                       </span>
                     </div>
-                    <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.5' }}>{ticket.description}</p>
+
+                    <p style={{ margin: '8px 0', color: '#666', fontSize: '14px', lineHeight: '1.5' }}>
+                      {ticket.description}
+                    </p>
                   </div>
                 ))}
               </div>

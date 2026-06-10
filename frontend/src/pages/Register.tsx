@@ -5,7 +5,7 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // ➡️ ADICIONADO: Estado do olhinho
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -18,9 +18,26 @@ export default function Register() {
       return;
     }
 
-    console.log('Dados enviados para cadastro:', { name, email, password });
-    alert('Conta criada com sucesso! Redirecionando para a tela de login...');
-    navigate('/login'); 
+    try {
+      // Dispara a criação real do perfil na tabela User do PostgreSQL!
+      const response = await fetch('http://localhost:3000/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Erro ao criar conta.');
+        return;
+      }
+
+      alert('Conta criada com sucesso no banco PostgreSQL! Redirecionando...');
+      navigate('/login'); 
+    } catch (err) {
+      setError('Erro ao conectar com o servidor do Kubernetes.');
+    }
   };
 
   return (
@@ -77,13 +94,12 @@ export default function Register() {
           <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
             <input
               id="password"
-              type={showPassword ? 'text' : 'password'} // ➡️ Alterna o tipo do input dinamicamente!
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Crie uma senha segura"
               style={{ width: '100%', padding: '12px', paddingRight: '60px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
             />
-            {/* Botão de Mostrar/Esconder Senha */}
             <button
               type="button"
               id="toggle-password-register"
