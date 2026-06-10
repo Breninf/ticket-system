@@ -1,13 +1,65 @@
-version: '3.8'
-
 services:
-  app:
+
+  backend:
     build: ./backend
+
+    container_name: ticket-system-backend
+
     ports:
       - "3000:3000"
+
     volumes:
       - ./backend:/app
       - /app/node_modules
+
     environment:
-      - NODE_ENV=development
-    command: npm start
+      NODE_ENV: development
+      PORT: ${PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+
+    depends_on:
+      - postgres
+
+    command: sh -c "npx prisma generate && npm start"
+
+  frontend:
+    build: ./frontend
+
+    container_name: ticket-system-frontend
+
+    ports:
+      - "5173:5173"
+
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+    environment:
+      VITE_API_URL: ${VITE_API_URL}
+
+    depends_on:
+      - backend
+
+    command: npm run dev -- --host
+
+  postgres:
+    image: postgres:17
+
+    container_name: ticket-system-db
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

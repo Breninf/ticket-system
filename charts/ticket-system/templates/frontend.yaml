@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-frontend
+spec:
+  # Quantidade de contêineres lida do values.yaml
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: ticket-frontend
+  template:
+    metadata:
+      labels:
+        app: ticket-frontend
+    spec:
+      containers:
+        - name: frontend
+          # Usa a imagem do front-end que configurado no Dockerfile
+          image: "{{ .Values.frontend.image }}:{{ .Values.frontend.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.frontend.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: ticket-frontend
+  ports:
+    - protocol: TCP
+      # Porta externa que vamos acessar no navegador
+      port: 5173
+      targetPort: {{ .Values.frontend.port }}

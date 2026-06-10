@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-backend
+spec:
+  # O Helm lê a quantidade de réplicas direto do values.yaml
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: ticket-backend
+  template:
+    metadata:
+      labels:
+        app: ticket-backend
+    spec:
+      containers:
+        - name: backend
+          # Imagem Alpine leve e otimizada ( footprint menor )
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+          # Força o Kubernetes a usar a imagem que buildamos localmente
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          env:
+            # Helm Monta a string DATABASE_URL juntando as peças do values.yaml
+            - name: DATABASE_URL
+              value: "postgresql://{{ .Values.database.user }}:{{ .Values.database.password }}@postgres-service:{{ .Values.database.port }}/{{ .Values.database.name }}?schema=public"
+            - name: JWT_SECRET
+              value: "{{ .Values.backend.jwtSecret }}"
+            - name: PORT
+              value: "{{ .Values.backend.port }}"
+            - name: SYSLOG_SERVER
+              value: "syslog-service"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: ticket-backend
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: {{ .Values.backend.port }}

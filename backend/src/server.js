@@ -1,20 +1,10 @@
-const express = require('express');
+import dotenv from 'dotenv';
+dotenv.config();
 
-const app = express();
+import app from './app.js';
+
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.send('API rodando');
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-};
-
-module.exports = app;

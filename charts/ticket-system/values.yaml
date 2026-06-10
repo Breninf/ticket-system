@@ -1,0 +1,24 @@
+# Configurações globais do ambiente (staging ou prod)
+environment: staging
+
+# Configurações do Banco de Dados PostgreSQL
+database:
+  user: ticket_admin
+  password: senha_secreta_k8s_123
+  name: ticket_system
+  port: 5432
+
+# Configurações do Servidor Back-end (Node.js)
+backend:
+  replicaCount: 1
+  image: docker.io/library/ticket-system-backend # ➡️ Atualizado com o prefixo correto!
+  tag: v2
+  port: 3000
+  jwtSecret: minha_chave_secreta_do_kubernetes_mvp
+
+# Configurações da Interface Front-end (Vite)
+frontend:
+  replicaCount: 1
+  image: docker.io/library/ticket-system-frontend # ➡️ Atualizado com o prefixo correto!
+  tag: v7
+  port: 5173
