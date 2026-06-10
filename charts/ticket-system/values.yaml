@@ -11,7 +11,7 @@ database:
 # Configurações do Servidor Back-end (Node.js)
 backend:
   replicaCount: 1
-  image: docker.io/library/ticket-system-backend # ➡️ Atualizado com o prefixo correto!
+  image: docker.io/library/ticket-system-backend 
   tag: v2
   port: 3000
   jwtSecret: minha_chave_secreta_do_kubernetes_mvp
@@ -19,6 +19,6 @@ backend:
 # Configurações da Interface Front-end (Vite)
 frontend:
   replicaCount: 1
-  image: docker.io/library/ticket-system-frontend # ➡️ Atualizado com o prefixo correto!
+  image: docker.io/library/ticket-system-frontend 
   tag: v7
   port: 5173
